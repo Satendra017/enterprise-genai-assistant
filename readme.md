@@ -223,5 +223,5 @@ Auto re-deploy ho jaata hai 🚀
 
 ## 👨‍💻 Author
 
-**Raj Bhardwaj**  
+**Satendra Kumar Yadav**  
 GenAI & FastAPI Python Developer
