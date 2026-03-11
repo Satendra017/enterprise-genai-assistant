@@ -60,28 +60,55 @@ if not st.session_state.token:
 headers = {"Authorization": f"Bearer {st.session_state.token}"}
 
 # Auto-load or auto-create session after login
+# Auto-load or auto-create session after login
 if st.session_state.token and not st.session_state.session_id:
-    # Get user sessions
     response = requests.get(f"{BACKEND_URL}/sessions/my-sessions", headers=headers)
     if response.status_code == 200:
         sessions = response.json()
         if sessions:
-            # Open latest session
-            latest_session = sessions[0]  # because ordered desc
-            st.session_state.session_id = latest_session["id"]
+            latest_session = sessions[0]
             msg_response = requests.get(f"{BACKEND_URL}/sessions/{latest_session['id']}/messages", headers=headers)
-
             if msg_response.status_code == 200:
                 messages = msg_response.json()
-                st.session_state.chat_history = [(m["role"], m["content"]) for m in messages]
+                if len(messages) == 0:
+                    # reuse empty session
+                    st.session_state.session_id = latest_session["id"]
+                    st.session_state.chat_history = []
+                else:
+                    # create new chat
+                    create_resp = requests.post(f"{BACKEND_URL}/sessions/create", headers=headers)
+                    if create_resp.status_code == 200:
+                        st.session_state.session_id = create_resp.json()["session_id"]
+                        st.session_state.chat_history = []
         else:
-            # No sessions → create one automatically
+            # no sessions → create new
             create_resp = requests.post(f"{BACKEND_URL}/sessions/create", headers=headers)
             if create_resp.status_code == 200:
                 st.session_state.session_id = create_resp.json()["session_id"]
                 st.session_state.chat_history = []
 
-        st.rerun()
+    st.rerun()
+    # Get user sessions
+    # response = requests.get(f"{BACKEND_URL}/sessions/my-sessions", headers=headers)
+    # if response.status_code == 200:
+    #     sessions = response.json()
+    #     if sessions:
+    #         # Open latest session
+    #         latest_session = sessions[0]  # because ordered desc
+    #         st.session_state.session_id = latest_session["id"]
+    #         msg_response = requests.get(f"{BACKEND_URL}/sessions/{latest_session['id']}/messages", headers=headers)
+    #
+    #         if msg_response.status_code == 200:
+    #             messages = msg_response.json()
+    #             st.session_state.chat_history = [(m["role"], m["content"]) for m in messages]
+    #     else:
+    #         # No sessions → create one automatically
+    #         create_resp = requests.post(f"{BACKEND_URL}/sessions/create", headers=headers)
+    #         if create_resp.status_code == 200:
+    #             st.session_state.session_id = create_resp.json()["session_id"]
+    #             st.session_state.chat_history = []
+    #
+    #     st.rerun()
 
 with st.sidebar:
     st.title("💬 Chats")
